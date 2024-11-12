@@ -25,7 +25,8 @@ class SpecDataHandler:
     def print_stats(self):
         print(f"Current Zero \n {self.zero}")
         print(f"Current Data \n {self.pivot_df}")
-
+    def return_all(self):
+        return self.pivot_df
     def set_zero(self, zero):
         self.zero = zero
 

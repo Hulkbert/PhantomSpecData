@@ -125,6 +125,15 @@ sam.print_stats()
 print("std")
 print(std)
 
+# Define the output Excel file path
+output_file_path = 'combined_dataframes.xlsx'
+
+# Create an Excel writer object and specify the file path
+with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
+    # Write each DataFrame to a specific sheet/tab
+    mat.return_all().to_excel(writer, sheet_name='Materials', index=False)
+    sam.return_all().to_excel(writer, sheet_name='Samples', index=False)
+    std.to_excel(writer, sheet_name='Standard Deviations', index=False)
 # Now you can call the dataset_absorbance method on this instance
 
 # Print and save the DataFrame
