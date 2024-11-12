@@ -38,7 +38,7 @@ filtered_pivot_df = pivot_df[pivot_df['Wavelength'].isin(target_wavelengths)]
 # Function to order columns numerically
 def order_columns(df):
     ordered_columns = ['Wavelength'] + sorted(
-        [col for col in df.columns if col.startswith('Sample_') or col.startswith('Material_')],
+        [col for col in df.columns if col.startswith('Sample_') or col.startswith('Material_') or col.startswith('STDMaterial_')],
         key=lambda x: int(x.split('_')[1])
     )
     return ordered_columns
@@ -48,15 +48,36 @@ ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
 
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
 
-def create_std_df(dataFrame):
-    # Select columns that represent samples, ignoring 'Wavelength'
+def create_std_material_df(dataFrame):
+    # Extract all sample columns (ignoring 'Wavelength')
     sample_columns = [col for col in dataFrame.columns if col != 'Wavelength']
 
-    # Calculate the standard deviation across the sample columns for each row
-    dataFrame['Standard_Deviation'] = dataFrame[sample_columns].std(axis=1)
+    # Create a mapping to assign a material label to each sample, similar to create_averaged_material_df
+    material_labels = []
+    for i, sample in enumerate(sample_columns):
+        material_number = (i // 3) + 1  # Group every 3 samples
+        material_label = f'Material_{material_number}'
+        material_labels.append(material_label)
 
-    return dataFrame
+    # Create a dictionary to rename sample columns by their material group
+    material_mapping = dict(zip(sample_columns, material_labels))
 
+    # Rename columns in the DataFrame based on the material mapping
+    renamed_df = dataFrame.rename(columns=material_mapping)
+
+    # Group columns by material name to calculate standard deviation for each group
+    std_material_df = pd.DataFrame()
+    std_material_df['Wavelength'] = dataFrame['Wavelength']
+
+    # Iterate over unique material labels and calculate std deviation for each group
+    for material_label in set(material_labels):
+        material_columns = [col for col in renamed_df.columns if col == material_label]
+
+        # Only calculate if we have more than one column per material (i.e., grouped samples)
+        if len(material_columns) > 1:
+            std_material_df[f'STD{material_label}'] = renamed_df[material_columns].std(axis=1)
+    std_material_df = std_material_df[order_columns(std_material_df)]
+    return std_material_df
 # Function to create averaged DataFrame by material
 def create_averaged_material_df(dataFrame):
     # Extract all sample columns (ignoring 'Wavelength')
@@ -90,15 +111,19 @@ grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_d
 # Assuming grouped_material_pivot_df is your pivot DataFrame (it was created earlier in your script)
 mat = SpecDataHandler(grouped_material_pivot_df) #material based grouping (averaged)
 sam = SpecDataHandler(ordered_filtered_pivot_df) #sample based grouping (filtered)
-std = SpecDataHandler(create_std_df(ordered_filtered_pivot_df))
+std = create_std_material_df(ordered_filtered_pivot_df)
 
 
-
+print("materials")
 mat.print_stats()
 
+
+print("samples")
 sam.print_stats()
 
-std.print_stats()
+
+print("std")
+print(std)
 
 # Now you can call the dataset_absorbance method on this instance
 

@@ -12,6 +12,7 @@ class SpecDataHandler:
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
         self.zero = self.pivot_df.iloc[:, 1]
+
     def get_sample_data(self, sample_name):
         """
         Get the Wavelength and Intensity data for a specific sample.
@@ -20,11 +21,14 @@ class SpecDataHandler:
             return self.pivot_df[['Wavelength', sample_name]]
         else:
             raise ValueError(f"Sample '{sample_name}' not found in the data.")
+
     def print_stats(self):
         print(f"Current Zero \n {self.zero}")
         print(f"Current Data \n {self.pivot_df}")
-    def set_zero(self,zero):
+
+    def set_zero(self, zero):
         self.zero = zero
+
     def get_one_absorption(self, sample_name, wavelength):
         """
         Calculate the absorption for a specific sample at a given wavelength using Beer-Lambert's law.
