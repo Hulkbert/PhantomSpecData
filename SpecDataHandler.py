@@ -11,7 +11,7 @@ class SpecDataHandler:
         """
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
-
+        self.zero = self.pivot_df.iloc[:, 1]
     def get_sample_data(self, sample_name):
         """
         Get the Wavelength and Intensity data for a specific sample.
@@ -20,8 +20,12 @@ class SpecDataHandler:
             return self.pivot_df[['Wavelength', sample_name]]
         else:
             raise ValueError(f"Sample '{sample_name}' not found in the data.")
-
-    def get_one_absorption(self, sample_name, wavelength, zero="Material_1"):
+    def print_stats(self):
+        print(f"Current Zero \n {self.zero}")
+        print(f"Current Data \n {self.pivot_df}")
+    def set_zero(self,zero):
+        self.zero = zero
+    def get_one_absorption(self, sample_name, wavelength):
         """
         Calculate the absorption for a specific sample at a given wavelength using Beer-Lambert's law.
 
@@ -39,22 +43,22 @@ class SpecDataHandler:
         # Check if sample and zero exist in data
         if sample_name not in self.pivot_df.columns:
             raise ValueError(f"Sample '{sample_name}' not found in data columns.")
-        if zero not in self.pivot_df.columns:
-            raise ValueError(f"Reference '{zero}' not found in data columns.")
+        if self.zero not in self.pivot_df.columns:
+            raise ValueError(f"Reference '{self.zero}' not found in data columns.")
 
         # Get sample and reference data for the given wavelength
         sample_data = self.get_sample_data(sample_name)
-        zero_data = self.get_sample_data(zero)
+        zero_data = self.get_sample_data(self.zero)
 
         # Filter by wavelength
         sample_value = sample_data.loc[sample_data['Wavelength'] == wavelength, sample_name]
-        zero_value = zero_data.loc[zero_data['Wavelength'] == wavelength, zero]
+        zero_value = zero_data.loc[zero_data['Wavelength'] == wavelength, self.zero]
 
         # Check if data was found for the given wavelength
         if sample_value.empty:
             raise ValueError(f"Wavelength '{wavelength}' not found for sample '{sample_name}'.")
         if zero_value.empty:
-            raise ValueError(f"Wavelength '{wavelength}' not found for reference '{zero}'.")
+            raise ValueError(f"Wavelength '{wavelength}' not found for reference '{self.zero}'.")
 
         # Extract the actual values
         sample_value = sample_value.values[0]
@@ -70,7 +74,7 @@ class SpecDataHandler:
 
         return absorbance
 
-    def all_absorbance(self, sample_name, zero="Material_1"):
+    def all_absorbance(self, sample_name, zero):
         """
         Calculate the absorption for a specific sample across all available wavelengths.
 
@@ -98,7 +102,7 @@ class SpecDataHandler:
 
         return absorbance_df
 
-    def dataset_absorbance(self, zero="Material_1"):
+    def dataset_absorbance(self, zero):
         absorbance_results = []
         # Iterate over each sample in the DataFrame columns (excluding 'Wavelength')
         for sample in self.pivot_df.columns:

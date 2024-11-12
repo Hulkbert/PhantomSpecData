@@ -48,6 +48,14 @@ ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
 
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
 
+def create_std_df(dataFrame):
+    # Select columns that represent samples, ignoring 'Wavelength'
+    sample_columns = [col for col in dataFrame.columns if col != 'Wavelength']
+
+    # Calculate the standard deviation across the sample columns for each row
+    dataFrame['Standard_Deviation'] = dataFrame[sample_columns].std(axis=1)
+
+    return dataFrame
 
 # Function to create averaged DataFrame by material
 def create_averaged_material_df(dataFrame):
@@ -78,12 +86,21 @@ def create_averaged_material_df(dataFrame):
     return averaged_material_df
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
-
+#create_std_df(ordered_filtered_pivot_df)
 # Assuming grouped_material_pivot_df is your pivot DataFrame (it was created earlier in your script)
-handler = SpecDataHandler(grouped_material_pivot_df)
+mat = SpecDataHandler(grouped_material_pivot_df) #material based grouping (averaged)
+sam = SpecDataHandler(ordered_filtered_pivot_df) #sample based grouping (filtered)
+std = SpecDataHandler(create_std_df(ordered_filtered_pivot_df))
+
+
+
+mat.print_stats()
+
+sam.print_stats()
+
+std.print_stats()
 
 # Now you can call the dataset_absorbance method on this instance
-print(handler.dataset_absorbance())
 
 # Print and save the DataFrame
 #testDF.output_val(grouped_material_pivot_df,"grouped_data")
