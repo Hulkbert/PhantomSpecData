@@ -106,12 +106,30 @@ def create_averaged_material_df(dataFrame):
     averaged_material_df = averaged_material_df[order_columns(averaged_material_df)]
     return averaged_material_df
 
+def create_absorbance_df(MatSpecData):
+    absorbance_df = MatSpecData.dataset_absorbance()
+    
+    # Only try to reorder columns if 'Wavelength' exists in the DataFrame
+    if 'Wavelength' in absorbance_df.columns:
+        absorbance_df = absorbance_df[order_columns(absorbance_df)]
+    else:
+        # Either add the wavelength column back if needed, or just order the existing columns
+        ordered_columns = sorted(
+            [col for col in absorbance_df.columns if col.startswith('Sample_') or col.startswith('Material_') or col.startswith('STDMaterial_')],
+            key=lambda x: int(x.split('_')[1])
+        )
+        absorbance_df = absorbance_df[ordered_columns]
+
+    return absorbance_df
+
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
 # Assuming grouped_material_pivot_df is your pivot DataFrame (it was created earlier in your script)
 mat = SpecDataHandler(grouped_material_pivot_df) #material based grouping (averaged)
 sam = SpecDataHandler(ordered_filtered_pivot_df) #sample based grouping (filtered)
 std = create_std_material_df(ordered_filtered_pivot_df)
+absorbance_df_mat = create_absorbance_df(mat)
+absorbance_df_sam = create_absorbance_df(sam)
 
 
 print("materials")
@@ -125,7 +143,11 @@ sam.print_stats()
 print("std")
 print(std)
 
-# Define the output Excel file path
+print("absorbance material")
+print(absorbance_df_mat)
+print("absorbance sample")
+print(absorbance_df_mat)
+#Define the output Excel file path
 output_file_path = 'combined_dataframes.xlsx'
 
 # Create an Excel writer object and specify the file path
@@ -134,5 +156,6 @@ with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
     mat.return_all().to_excel(writer, sheet_name='Materials', index=False)
     sam.return_all().to_excel(writer, sheet_name='Samples', index=False)
     std.to_excel(writer, sheet_name='Standard Deviations', index=False)
-
+    absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
+    absorbance_df_sam.to_excel(writer, sheet_name='Absorbance Sample', index=False)
 

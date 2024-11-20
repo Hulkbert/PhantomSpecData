@@ -11,7 +11,7 @@ class SpecDataHandler:
         """
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
-        self.zero = self.pivot_df.iloc[:, 1]
+        self.zero = pivot_df.columns[1]
 
     def get_sample_data(self, sample_name):
         """
@@ -79,7 +79,7 @@ class SpecDataHandler:
 
         return absorbance
 
-    def all_absorbance(self, sample_name, zero):
+    def all_absorbance(self, sample_name):
         """
         Calculate the absorption for a specific sample across all available wavelengths.
 
@@ -99,7 +99,7 @@ class SpecDataHandler:
         # Iterate over each unique wavelength and calculate absorbance
         for wavelength in wavelengths:
             try:
-                result = self.get_one_absorption(sample_name, wavelength, zero)
+                result = self.get_one_absorption(sample_name, wavelength)
                 absorbance_results.append({'Wavelength': wavelength, 'Absorbance': result})
             except ValueError as e:
                 print(f"Warning: {e}")
@@ -107,12 +107,12 @@ class SpecDataHandler:
 
         return absorbance_df
 
-    def dataset_absorbance(self, zero):
+    def dataset_absorbance(self):
         absorbance_results = []
         # Iterate over each sample in the DataFrame columns (excluding 'Wavelength')
         for sample in self.pivot_df.columns:
             if sample != 'Wavelength':
-                current_absorbance = self.all_absorbance(sample, zero)
+                current_absorbance = self.all_absorbance(sample)
                 if isinstance(current_absorbance, pd.DataFrame):
                     for _, row in current_absorbance.iterrows():
                         absorbance_results.append(
