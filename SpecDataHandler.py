@@ -1,3 +1,17 @@
+"""
+SpecDataHandler Class
+===================
+
+A class for handling and processing spectroscopy data with built-in absorption calculations
+and visualization capabilities.
+
+Key Features:
+    - Manages spectroscopy data with wavelength and intensity measurements
+    - Calculates absorption using reference measurements
+    - Provides data visualization tools
+    - Supports both single-sample and batch processing
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,7 +21,13 @@ from pytz import all_timezones
 class SpecDataHandler:
     def __init__(self, pivot_df):
         """
-        Initialize with a pivot DataFrame containing Wavelength as index and samples as columns.
+        Initialize the SpecDataHandler with spectroscopy data.
+
+        Parameters:
+            pivot_df (pd.DataFrame): DataFrame containing:
+                - 'Wavelength' column
+                - Sample columns with intensity measurements
+                First column (Material_1) is assumed to be the reference measurement.
         """
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
@@ -32,51 +52,34 @@ class SpecDataHandler:
 
     def get_one_absorption(self, sample_name, wavelength):
         """
-        Calculate the absorption for a specific sample at a given wavelength using Beer-Lambert's law.
+        Calculate absorbance for a single sample at a specific wavelength.
 
         Parameters:
-        sample_name (str): The name of the sample whose absorption is to be calculated.
-        wavelength (float): The wavelength for which the absorption is to be calculated.
-        zero (str, optional): The name of the reference (default is "Material_1").
+            sample_name (str): Name of the sample column
+            wavelength (float): Target wavelength for calculation
 
         Returns:
-        float: The calculated absorbance value.
+            float: Calculated absorbance value using Beer-Lambert law:
+                  A = log(I₀/I), where I₀ is reference intensity and I is sample intensity
 
         Raises:
-        ValueError: If the sample or wavelength is not found in the data.
+            ValueError: If sample not found or intensity is zero
         """
-        # Check if sample and zero exist in data
         if sample_name not in self.pivot_df.columns:
             raise ValueError(f"Sample '{sample_name}' not found in data columns.")
-        if self.zero not in self.pivot_df.columns:
-            raise ValueError(f"Reference '{self.zero}' not found in data columns.")
 
-        # Get sample and reference data for the given wavelength
+        # Get sample data
         sample_data = self.get_sample_data(sample_name)
-        zero_data = self.get_sample_data(self.zero)
+        
+        # Get reference value at this wavelength
+        zero_value = self.pivot_df.loc[self.pivot_df['Wavelength'] == wavelength, self.zero].values[0]
+        sample_value = sample_data.loc[sample_data['Wavelength'] == wavelength, sample_name].values[0]
 
-        # Filter by wavelength
-        sample_value = sample_data.loc[sample_data['Wavelength'] == wavelength, sample_name]
-        zero_value = zero_data.loc[zero_data['Wavelength'] == wavelength, self.zero]
-
-        # Check if data was found for the given wavelength
-        if sample_value.empty:
-            raise ValueError(f"Wavelength '{wavelength}' not found for sample '{sample_name}'.")
-        if zero_value.empty:
-            raise ValueError(f"Wavelength '{wavelength}' not found for reference '{self.zero}'.")
-
-        # Extract the actual values
-        sample_value = sample_value.values[0]
-        zero_value = zero_value.values[0]
-
-        # Ensure sample value is not zero to avoid division by zero
+        # Calculate absorbance using averaged reference
         if sample_value == 0:
-            raise ValueError(
-                f"Sample intensity for '{sample_name}' at wavelength '{wavelength}' is zero, leading to a division error.")
-
-        # Calculate absorbance
+            raise ValueError(f"Sample intensity is zero, leading to a division error.")
+        
         absorbance = np.log(zero_value / sample_value)
-
         return absorbance
 
     def all_absorbance(self, sample_name):

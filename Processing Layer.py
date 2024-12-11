@@ -48,36 +48,31 @@ ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
 
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
 
-def create_std_material_df(dataFrame):
-    # Extract all sample columns (ignoring 'Wavelength')
-    sample_columns = [col for col in dataFrame.columns if col != 'Wavelength']
-
-    # Create a mapping to assign a material label to each sample, similar to create_averaged_material_df
-    material_labels = []
-    for i, sample in enumerate(sample_columns):
-        material_number = (i // 3) + 1  # Group every 3 samples
-        material_label = f'Material_{material_number}'
-        material_labels.append(material_label)
-
-    # Create a dictionary to rename sample columns by their material group
-    material_mapping = dict(zip(sample_columns, material_labels))
-
-    # Rename columns in the DataFrame based on the material mapping
-    renamed_df = dataFrame.rename(columns=material_mapping)
-
-    # Group columns by material name to calculate standard deviation for each group
+def create_std_material_df(absorbance_df):
+    """Calculate standard deviation of absorbance values for each material group"""
+    # Create output DataFrame with wavelengths
     std_material_df = pd.DataFrame()
-    std_material_df['Wavelength'] = dataFrame['Wavelength']
-
-    # Iterate over unique material labels and calculate std deviation for each group
-    for material_label in set(material_labels):
-        material_columns = [col for col in renamed_df.columns if col == material_label]
-
-        # Only calculate if we have more than one column per material (i.e., grouped samples)
-        if len(material_columns) > 1:
-            std_material_df[f'STD{material_label}'] = renamed_df[material_columns].std(axis=1)
-    std_material_df = std_material_df[order_columns(std_material_df)]
+    std_material_df['Wavelength'] = absorbance_df.index.values
+    
+    # Get all sample columns except reference samples
+    sample_columns = [col for col in absorbance_df.columns if col.startswith('Sample_')][:]  
+    # Process each material group (3 samples per material)
+    for i in range(0, len(sample_columns), 3):
+        # Get the next 3 samples that form a material group
+        group_samples = sample_columns[i:i+3]
+        material_number = (i // 3) + 1
+        
+        # Calculate standard deviation for this group
+        group_std = absorbance_df[group_samples].std(axis=1)
+        
+        # Explicitly set the values in the DataFrame
+        std_material_df[f'STDMaterial_{material_number}'] = group_std.values  # Add .values here
+    
+    # Reset the index to make sure Wavelength is a column
+    std_material_df = std_material_df.reset_index(drop=True)
+    
     return std_material_df
+
 # Function to create averaged DataFrame by material
 def create_averaged_material_df(dataFrame):
     # Extract all sample columns (ignoring 'Wavelength')
@@ -125,12 +120,17 @@ def create_absorbance_df(MatSpecData):
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
 # Assuming grouped_material_pivot_df is your pivot DataFrame (it was created earlier in your script)
-mat = SpecDataHandler(grouped_material_pivot_df) #material based grouping (averaged)
-sam = SpecDataHandler(ordered_filtered_pivot_df) #sample based grouping (filtered)
-std = create_std_material_df(ordered_filtered_pivot_df)
-absorbance_df_mat = create_absorbance_df(mat)
+mat = SpecDataHandler(grouped_material_pivot_df)  # Material_1 will be reference
+sam = SpecDataHandler(ordered_filtered_pivot_df)  # First sample will be reference
 absorbance_df_sam = create_absorbance_df(sam)
+std = create_std_material_df(absorbance_df_sam)
+absorbance_df_mat = create_absorbance_df(mat)
 
+print("absorbance sample")
+print(absorbance_df_sam)
+
+print("absorbance material")
+print(absorbance_df_mat)
 
 print("materials")
 mat.print_stats()
@@ -143,10 +143,6 @@ sam.print_stats()
 print("std")
 print(std)
 
-print("absorbance material")
-print(absorbance_df_mat)
-print("absorbance sample")
-print(absorbance_df_mat)
 #Define the output Excel file path
 output_file_path = 'combined_dataframes.xlsx'
 
@@ -156,6 +152,5 @@ with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
     mat.return_all().to_excel(writer, sheet_name='Materials', index=False)
     sam.return_all().to_excel(writer, sheet_name='Samples', index=False)
     std.to_excel(writer, sheet_name='Standard Deviations', index=False)
-    absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
     absorbance_df_sam.to_excel(writer, sheet_name='Absorbance Sample', index=False)
-
+    absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
