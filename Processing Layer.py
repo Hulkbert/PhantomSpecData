@@ -1,3 +1,13 @@
+"""
+This script processes spectroscopic data from text files and performs various analyses including:
+- Loading and combining multiple spectroscopic data files
+- Filtering data for specific wavelengths
+- Calculating material averages and standard deviations
+- Exporting processed data to Excel
+
+The script handles both sample-level and material-level data processing.
+"""
+
 import os
 import pandas as pd
 import numpy as np
@@ -37,6 +47,16 @@ filtered_pivot_df = pivot_df[pivot_df['Wavelength'].isin(target_wavelengths)]
 
 # Function to order columns numerically
 def order_columns(df):
+    """
+    Orders DataFrame columns numerically based on their suffix numbers.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame with columns to be ordered
+        
+    Returns:
+        list: Ordered list of column names with 'Wavelength' first, followed by
+              numerically sorted Sample_, Material_, or STDMaterial_ columns
+    """
     ordered_columns = ['Wavelength'] + sorted(
         [col for col in df.columns if col.startswith('Sample_') or col.startswith('Material_') or col.startswith('STDMaterial_')],
         key=lambda x: int(x.split('_')[1])
@@ -49,66 +69,71 @@ ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
 
 def create_std_material_df(absorbance_df):
-    """Calculate standard deviation of absorbance values for each material group"""
-    # Create output DataFrame with wavelengths
+    """
+    Calculates standard deviation of absorbance values for each material group.
+    
+    Args:
+        absorbance_df (pandas.DataFrame): DataFrame containing absorbance values
+            with samples grouped by material (3 samples per material)
+            
+    Returns:
+        pandas.DataFrame: DataFrame containing wavelengths and standard deviations
+            for each material group
+    """
     std_material_df = pd.DataFrame()
     std_material_df['Wavelength'] = absorbance_df.index.values
     
-    # Get all sample columns except reference samples
     sample_columns = [col for col in absorbance_df.columns if col.startswith('Sample_')][:]  
-    # Process each material group (3 samples per material)
     for i in range(0, len(sample_columns), 3):
-        # Get the next 3 samples that form a material group
         group_samples = sample_columns[i:i+3]
         material_number = (i // 3) + 1
-        
-        # Calculate standard deviation for this group
         group_std = absorbance_df[group_samples].std(axis=1)
-        
-        # Explicitly set the values in the DataFrame
-        std_material_df[f'STDMaterial_{material_number}'] = group_std.values  # Add .values here
+        std_material_df[f'STDMaterial_{material_number}'] = group_std.values
     
-    # Reset the index to make sure Wavelength is a column
     std_material_df = std_material_df.reset_index(drop=True)
-    
     return std_material_df
 
 # Function to create averaged DataFrame by material
 def create_averaged_material_df(dataFrame):
-    # Extract all sample columns (ignoring 'Wavelength')
+    """
+    Creates a DataFrame with averaged values for each material group.
+    
+    Args:
+        dataFrame (pandas.DataFrame): Input DataFrame containing sample data
+            where every 3 samples represent one material
+            
+    Returns:
+        pandas.DataFrame: DataFrame with averaged values for each material group
+    """
     sample_columns = [col for col in dataFrame.columns if col != 'Wavelength']
-
-    # Create a mapping to assign a material label to each sample
     material_labels = []
     for i, sample in enumerate(sample_columns):
-        material_number = (i // 3) + 1  # Group every 3 samples
+        material_number = (i // 3) + 1
         material_label = f'Material_{material_number}'
         material_labels.append(material_label)
 
-    # Create a dictionary to rename sample columns by their material group
     material_mapping = dict(zip(sample_columns, material_labels))
-
-    # Rename columns in the DataFrame based on the material mapping
     renamed_df = dataFrame.rename(columns=material_mapping)
-
-    # Group by 'Wavelength' and then average columns with the same material name
     averaged_material_df = renamed_df.groupby('Wavelength', axis=0).mean().reset_index()
-
-    # Average the columns with the same material name by grouping them along axis=1
     averaged_material_df = averaged_material_df.groupby(averaged_material_df.columns, axis=1).mean()
-
-    # Reorder columns numerically
     averaged_material_df = averaged_material_df[order_columns(averaged_material_df)]
     return averaged_material_df
 
 def create_absorbance_df(MatSpecData):
+    """
+    Creates an absorbance DataFrame from spectroscopic data.
+    
+    Args:
+        MatSpecData (SpecDataHandler): Object containing spectroscopic data
+            
+    Returns:
+        pandas.DataFrame: DataFrame containing ordered absorbance values
+    """
     absorbance_df = MatSpecData.dataset_absorbance()
     
-    # Only try to reorder columns if 'Wavelength' exists in the DataFrame
     if 'Wavelength' in absorbance_df.columns:
         absorbance_df = absorbance_df[order_columns(absorbance_df)]
     else:
-        # Either add the wavelength column back if needed, or just order the existing columns
         ordered_columns = sorted(
             [col for col in absorbance_df.columns if col.startswith('Sample_') or col.startswith('Material_') or col.startswith('STDMaterial_')],
             key=lambda x: int(x.split('_')[1])
@@ -119,7 +144,6 @@ def create_absorbance_df(MatSpecData):
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
-# Assuming grouped_material_pivot_df is your pivot DataFrame (it was created earlier in your script)
 mat = SpecDataHandler(grouped_material_pivot_df)  # Material_1 will be reference
 sam = SpecDataHandler(ordered_filtered_pivot_df)  # First sample will be reference
 absorbance_df_sam = create_absorbance_df(sam)

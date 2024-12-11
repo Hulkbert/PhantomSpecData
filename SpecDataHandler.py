@@ -2,12 +2,12 @@
 SpecDataHandler Class
 ===================
 
-A class for handling and processing spectroscopy data with built-in absorption calculations
+A class for handling and processing spectroscopy data with built-in absorbance calculations
 and visualization capabilities.
 
 Key Features:
     - Manages spectroscopy data with wavelength and intensity measurements
-    - Calculates absorption using reference measurements
+    - Calculates absorbance using reference measurements
     - Provides data visualization tools
     - Supports both single-sample and batch processing
 """
@@ -27,7 +27,7 @@ class SpecDataHandler:
             pivot_df (pd.DataFrame): DataFrame containing:
                 - 'Wavelength' column
                 - Sample columns with intensity measurements
-                First column (Material_1) is assumed to be the reference measurement.
+                The reference measurement (zero) defaults to the first non-wavelength column.
         """
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
@@ -129,14 +129,20 @@ class SpecDataHandler:
 
     def plot_sample(self, sample_name):
         """
-        Plot the absorption data for a specific sample.
+        Plot the intensity data for a specific sample.
+
+        Parameters:
+            sample_name (str): Name of the sample column to plot
+
+        Raises:
+            ValueError: If sample_name is not found in the data
         """
         if sample_name in self.samples:
             plt.figure(figsize=(10, 6))
             plt.plot(self.pivot_df['Wavelength'], self.pivot_df[sample_name], label=sample_name)
             plt.xlabel('Wavelength')
-            plt.ylabel('Absorption')
-            plt.title(f'Absorption Spectrum for {sample_name}')
+            plt.ylabel('Intensity')
+            plt.title(f'Intensity Spectrum for {sample_name}')
             plt.legend()
             plt.grid(True)
             plt.show()
