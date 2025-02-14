@@ -20,7 +20,7 @@ import editDFTest as testDF
 from SpecDataHandler import SpecDataHandler
 
 # Load sample info
-sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/SampleSheet2.xlsx', sheet_name=0).dropna()
+sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_samples_02_13_25.xlsx', sheet_name=0).dropna()
 
 # Find all text files in the folder
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
@@ -29,7 +29,8 @@ specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
 
 # Create DataFrames from all text files
 dfs = [
-    pd.read_csv(file, delimiter='\t', header=None, names=["Wavelength", "Absorption"]).assign(Sample=f'Sample_{i}')
+    pd.read_csv(file, delimiter='\t', header=0, skiprows=14,
+                names=["Wavelength", "Absorption"]).assign(Sample=f'Sample_{i}')
     for i, file in enumerate(specFiles)
 ]
 
