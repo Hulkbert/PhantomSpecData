@@ -150,6 +150,7 @@ class SpecDataHandler:
         else:
             raise ValueError(f"Sample '{sample_name}' not found in the data.")
     def get_one_scattering():
+        #we have to calculate the scattering coefficient with the correct formula for one sample at one wavelength.
         return False
     def get_all_scattering():
         return False
