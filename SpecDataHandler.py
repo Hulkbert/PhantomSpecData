@@ -11,6 +11,7 @@ Key Features:
     - Provides data visualization tools
     - Supports both single-sample and batch processing
 """
+from contextlib import nullcontext
 
 import numpy as np
 import pandas as pd
@@ -148,3 +149,7 @@ class SpecDataHandler:
             plt.show()
         else:
             raise ValueError(f"Sample '{sample_name}' not found in the data.")
+    def get_one_scattering():
+        return False
+    def get_all_scattering():
+        return False
