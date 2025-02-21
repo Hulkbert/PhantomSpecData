@@ -149,7 +149,3 @@ class SpecDataHandler:
             plt.show()
         else:
             raise ValueError(f"Sample '{sample_name}' not found in the data.")
-    def get_one_scattering():
-        return False
-    def get_all_scattering():
-        return False
