@@ -76,11 +76,16 @@ class SpecDataHandler:
         zero_value = self.pivot_df.loc[self.pivot_df['Wavelength'] == wavelength, self.zero].values[0]
         sample_value = sample_data.loc[sample_data['Wavelength'] == wavelength, sample_name].values[0]
 
-        # Calculate absorbance using averaged reference
-        if sample_value == 0:
-            raise ValueError(f"Sample intensity is zero, leading to a division error.")
+        # Add validation for reference value
+        if zero_value <= 0:
+            raise ValueError(f"Reference intensity is zero or negative at wavelength {wavelength}")
         
+        # Add warning for negative absorbance
         absorbance = np.log(zero_value / sample_value)
+        if absorbance < 0:
+            print(f"Warning: Negative absorbance ({absorbance:.3f}) detected for {sample_name} at wavelength {wavelength}")
+            print(f"Reference intensity: {zero_value}, Sample intensity: {sample_value}")
+        
         return absorbance
 
     def all_absorbance(self, sample_name):

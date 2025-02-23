@@ -18,6 +18,7 @@ from datetime import datetime
 import glob
 import editDFTest as testDF
 from SpecDataHandler import SpecDataHandler
+import re
 
 # Load sample info
 sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_samples_02_13_25.xlsx', sheet_name=0).dropna()
@@ -27,12 +28,20 @@ specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
 
 
 
-# Create DataFrames from all text files
+
+# Extract sample ID from filename pattern: ...__XX__XXXX.txt
+def parse_sample_id(filename):
+    match = re.search(r'__(\d+)__\d+\.txt$', filename)
+    return int(match.group(1)) if match else None
+
+# Modified file processing with ID parsing
 dfs = [
     pd.read_csv(file, delimiter='\t', header=0, skiprows=14,
-                names=["Wavelength", "Absorption"]).assign(Sample=f'Sample_{i}')
-    for i, file in enumerate(specFiles)
+                names=["Wavelength", "Absorption"])
+    .assign(Sample=f"Sample_{parse_sample_id(os.path.basename(file))}")
+    for file in specFiles
 ]
+
 
 # Combine DataFrames
 combined_df = pd.concat(dfs, ignore_index=True)
@@ -66,8 +75,13 @@ def order_columns(df):
 
 # Reorder columns
 ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
-
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
+
+def filter_negative_val(absorbance_df):
+    df=absorbance_df.mask(absorbance_df < 0)
+    return df
+ordered_filtered_pivot_df = filter_negative_val(ordered_filtered_pivot_df)
+
 
 def create_std_material_df(absorbance_df):
     """
@@ -142,6 +156,9 @@ def create_absorbance_df(MatSpecData):
         absorbance_df = absorbance_df[ordered_columns]
 
     return absorbance_df
+
+def create_scattering_data(dfInfoSheet):
+    return None
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
