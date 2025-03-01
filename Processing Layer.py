@@ -50,7 +50,7 @@ combined_df = pd.concat(dfs, ignore_index=True)
 pivot_df = combined_df.pivot(index='Wavelength', columns='Sample', values='Absorption').reset_index()
 
 # Define target wavelengths
-target_wavelengths = [630.188, 710.104, 800.131, 905.029, 940.061, 1000.111]
+target_wavelengths = [630.188, 710.104, 800.131, 905.029, 940.061] # removed wavelength of 1000.111
 
 # Filter based on target wavelengths
 filtered_pivot_df = pivot_df[pivot_df['Wavelength'].isin(target_wavelengths)]
@@ -158,6 +158,8 @@ def create_absorbance_df(MatSpecData):
     return absorbance_df
 
 def create_scattering_data(dfInfoSheet):
+
+
     return None
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
