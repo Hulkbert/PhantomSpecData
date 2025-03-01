@@ -130,7 +130,7 @@ class SpecDataHandler:
         # Convert results to DataFrame
         dataset_absorbance_df = pd.DataFrame(absorbance_results)
         pivot_df = dataset_absorbance_df.pivot(index='Wavelength', columns='Sample', values='Absorbance')
-
+        pivot_df = pivot_df.reset_index()  # Make 'Wavelength' a column again
         return pivot_df
 
     def plot_sample(self, sample_name):

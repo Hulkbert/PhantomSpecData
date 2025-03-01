@@ -26,7 +26,12 @@ sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_sa
 # Find all text files in the folder
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
 
+# Load the Scattering info
+scatteringInfoSheet_df = pd.read_excel('Scattering_Data/scattering_samples_02_13_25.xlsx',sheet_name=0).dropna()
 
+#Load the Scattering Data
+
+scatteringDataSheet_df = pd.read_excel('Scattering_Data/Scattering_combined_dataframes.xlsx',sheet_name='Absorbance Material').dropna()
 
 
 # Extract sample ID from filename pattern: ...__XX__XXXX.txt
@@ -133,7 +138,7 @@ def create_averaged_material_df(dataFrame):
     averaged_material_df = averaged_material_df.groupby(averaged_material_df.columns, axis=1).mean()
     averaged_material_df = averaged_material_df[order_columns(averaged_material_df)]
     return averaged_material_df
-
+'''
 def create_absorbance_df(MatSpecData):
     """
     Creates an absorbance DataFrame from spectroscopic data.
@@ -145,19 +150,21 @@ def create_absorbance_df(MatSpecData):
         pandas.DataFrame: DataFrame containing ordered absorbance values
     """
     absorbance_df = MatSpecData.dataset_absorbance()
-    
-    if 'Wavelength' in absorbance_df.columns:
-        absorbance_df = absorbance_df[order_columns(absorbance_df)]
-    else:
-        ordered_columns = sorted(
-            [col for col in absorbance_df.columns if col.startswith('Sample_') or col.startswith('Material_') or col.startswith('STDMaterial_')],
-            key=lambda x: int(x.split('_')[1])
-        )
-        absorbance_df = absorbance_df[ordered_columns]
 
+    absorbance_df = [order_columns(absorbance_df)]
+
+
+    return absorbance_df
+'''
+
+def create_absorbance_df(MatSpecData):
+    absorbance_df = MatSpecData.dataset_absorbance()
+    # Use the list of ordered columns to select those columns from the DataFrame
+    absorbance_df = absorbance_df[order_columns(absorbance_df)]
     return absorbance_df
 
 def create_scattering_data(dfInfoSheet):
+
 
 
     return None
