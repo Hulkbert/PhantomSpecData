@@ -16,6 +16,9 @@ import math
 import logging
 from datetime import datetime
 import glob
+
+from matplotlib.pyplot import scatter
+
 import editDFTest as testDF
 from SpecDataHandler import SpecDataHandler
 import re
@@ -27,10 +30,11 @@ sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_sa
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
 
 # Load the Scattering info
-scatteringInfoSheet_df = pd.read_excel('Scattering_Data/scattering_samples_02_13_25.xlsx',sheet_name=0).dropna()
-
+scatteringInfoSheet_df = pd.read_excel('Scattering_Data/scattering_samples_02_13_25.xlsx', sheet_name='Data')
+# Only drop rows where essential columns are missing
+essential_columns = ['Material_ID', 'scatter_Volume_mg']
+scatteringInfoSheet_df = scatteringInfoSheet_df.dropna(subset=essential_columns)
 #Load the Scattering Data
-
 scatteringDataSheet_df = pd.read_excel('Scattering_Data/Scattering_combined_dataframes.xlsx',sheet_name='Absorbance Material').dropna()
 
 
@@ -157,17 +161,102 @@ def create_absorbance_df(MatSpecData):
     return absorbance_df
 '''
 
-def create_absorbance_df(MatSpecData):
+def create_absorbance_df(MatSpecData, ):
     absorbance_df = MatSpecData.dataset_absorbance()
     # Use the list of ordered columns to select those columns from the DataFrame
     absorbance_df = absorbance_df[order_columns(absorbance_df)]
     return absorbance_df
 
-def create_scattering_data(dfInfoSheet):
+
+def create_scattering_map(dfInfoSheet):
+    dfInfoSheet = dfInfoSheet[['Material_ID', 'scatter_Volume_mg']].copy()
+
+    # Convert Material_ID to numeric first
+    dfInfoSheet['Material_ID'] = pd.to_numeric(dfInfoSheet['Material_ID'], errors='coerce')
+
+    scatter_map = {}
+
+    for i, row in dfInfoSheet.iterrows():
+        material_id = int(row['Material_ID'])  # Convert to integer
+        scatter_val = row['scatter_Volume_mg']
+
+        if pd.isna(scatter_val):  # Skip missing values
+            continue
+
+        if scatter_val not in scatter_map:
+            scatter_map[scatter_val] = []
+
+        # Add formatted material name instead of just the ID
+        material_name = f"Material_{material_id}"
+
+        # Only add if not already in the list
+        if material_name not in scatter_map[scatter_val]:
+            scatter_map[scatter_val].append(material_name)
+    # Comment this part out to bring back the 0.0 scattering volume, it's non-zero b/c of the scattering that happens in the environment + noise I presume
+    if np.float64(0.0) in scatter_map:
+        scatter_map.pop(np.float64(0.0))
+    return scatter_map
+
+
+def average_absorbance_by_scatter(absorbance_df, scatter_map):
+    """
+    Averages absorbance values by scatter volume.
+
+    Parameters:
+        absorbance_df (pd.DataFrame): DataFrame containing 'Wavelength' and material columns
+            with absorbance values (like 'Material_1', 'Material_2', etc.)
+        scatter_map (dict): Dictionary mapping scatter volumes to lists of material names
+            e.g., {0.0: ['Material_1', 'Material_2'], 12.8: ['Material_3', 'Material_4'], ...}
+
+    Returns:
+        pd.DataFrame: New DataFrame with 'Wavelength' and one column for each scatter volume,
+            containing the average absorbance values for materials with that scatter volume
+    """
+    # Make sure the 'Wavelength' column exists
+    if 'Wavelength' not in absorbance_df.columns:
+        print("Error: 'Wavelength' column not found in absorbance data.")
+        return None
+
+    # Prepare a dictionary to build the new DataFrame
+    new_data = {'Wavelength': absorbance_df['Wavelength']}
+
+    # Loop over each scatter value and its corresponding list of material names
+    for scatter_val, material_names in scatter_map.items():
+        # Convert scatter value to string for column name
+        scatter_key = str(float(scatter_val))
+
+        # Find which of these materials exist in the DataFrame
+        available_materials = [m for m in material_names if m in absorbance_df.columns]
+
+        if available_materials:
+            #  Compute the average absorbance for these materials
+            new_data[scatter_key] = absorbance_df[available_materials].mean(axis=1)
+            print(f"Scatter volume {scatter_key}: averaged {len(available_materials)} materials")
+        else:
+            print(f"Warning: No matching materials found for scatter volume {scatter_key}")
+
+    # Create and return the new DataFrame
+    averaged_df = pd.DataFrame(new_data)
+    return averaged_df
+
+
+def adjust_scattering(scattering_df, absorbance_df,sample_scat_dict):
+    scattering_df = scattering_df.set_index('Wavelength')
+    absorbance_df = absorbance_df.set_index('Wavelength')
+    result_df = pd.DataFrame(index=absorbance_df.index)
+
+    for adjustment_value, materials in sample_scat_dict.items():
+        adjustment_column = str(adjustment_value)  # Convert to string for column name
+        for material in materials:
+            new_column_name = f"{material}_minus_{adjustment_column}"
+            result_df[new_column_name] = absorbance_df[material] - scattering_df[adjustment_column]
+    result_df = result_df.reset_index()
+    result_df = result_df[order_columns(result_df)]
+    return result_df
+#def average_scattering_data(dfDataSheet,scatter_map):
 
 
 
-    return None
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
@@ -176,6 +265,12 @@ sam = SpecDataHandler(ordered_filtered_pivot_df)  # First sample will be referen
 absorbance_df_sam = create_absorbance_df(sam)
 std = create_std_material_df(absorbance_df_sam)
 absorbance_df_mat = create_absorbance_df(mat)
+scatter_map = create_scattering_map(scatteringInfoSheet_df)
+scatter_df_avg = average_absorbance_by_scatter(scatteringDataSheet_df, scatter_map)
+absorbance_df_scattering_dict = create_scattering_map(sampleInfoSheet_df)
+adjusted_absorbance_df_mat = adjust_scattering(scatter_df_avg, absorbance_df_mat, absorbance_df_scattering_dict)
+
+
 
 print("absorbance sample")
 print(absorbance_df_sam)
@@ -194,6 +289,27 @@ sam.print_stats()
 print("std")
 print(std)
 
+print("scattering")
+print(scatter_map)
+
+print("scattering info sheet")
+print(scatteringInfoSheet_df)
+
+#print("scattering data sheet")
+#print(scatteringDataSheet_df)
+
+print("scatter map")
+print(scatter_map)
+
+print('averaged by scattering volume')
+print(scatter_df_avg)
+
+print("dict for input sample scattering vol")
+print(absorbance_df_scattering_dict)
+
+print("adjusted input sample scattering vol")
+print(adjusted_absorbance_df_mat)
+
 #Define the output Excel file path
 output_file_path = 'combined_dataframes.xlsx'
 
@@ -205,3 +321,4 @@ with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
     std.to_excel(writer, sheet_name='Standard Deviations', index=False)
     absorbance_df_sam.to_excel(writer, sheet_name='Absorbance Sample', index=False)
     absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
+    adjusted_absorbance_df_mat.to_excel(writer, sheet_name='Adjusted Absorbance Material', index=False)
