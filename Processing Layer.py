@@ -266,11 +266,19 @@ absorbance_df_sam = create_absorbance_df(sam)
 std = create_std_material_df(absorbance_df_sam)
 absorbance_df_mat = create_absorbance_df(mat)
 scatter_map = create_scattering_map(scatteringInfoSheet_df)
-scatter_df_avg = average_absorbance_by_scatter(scatteringDataSheet_df, scatter_map)
-absorbance_df_scattering_dict = create_scattering_map(sampleInfoSheet_df)
-adjusted_absorbance_df_mat = adjust_scattering(scatter_df_avg, absorbance_df_mat, absorbance_df_scattering_dict)
+#scatter_df_avg = average_absorbance_by_scatter(scatteringDataSheet_df, scatter_map)
+#absorbance_df_scattering_dict = create_scattering_map(sampleInfoSheet_df)
+#adjusted_absorbance_df_mat = adjust_scattering(scatter_df_avg, absorbance_df_mat, absorbance_df_scattering_dict)
+#adjusted_absorbance_df_sam = adjust_scattering(scatter_df_avg, absorbance_df_sam, absorbance_df_scattering_dict)
 
+'''
+print('averaged by scattering volume')
+print(scatter_df_avg)
 
+print("dict for input sample scattering vol")
+print(absorbance_df_scattering_dict)
+print("sample adjusted")
+print(adjusted_absorbance_df_sam)
 
 print("absorbance sample")
 print(absorbance_df_sam)
@@ -284,6 +292,8 @@ mat.print_stats()
 
 print("samples")
 sam.print_stats()
+
+
 
 
 print("std")
@@ -309,7 +319,7 @@ print(absorbance_df_scattering_dict)
 
 print("adjusted input sample scattering vol")
 print(adjusted_absorbance_df_mat)
-
+'''
 #Define the output Excel file path
 output_file_path = 'combined_dataframes.xlsx'
 
@@ -321,4 +331,4 @@ with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
     std.to_excel(writer, sheet_name='Standard Deviations', index=False)
     absorbance_df_sam.to_excel(writer, sheet_name='Absorbance Sample', index=False)
     absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
-    adjusted_absorbance_df_mat.to_excel(writer, sheet_name='Adjusted Absorbance Material', index=False)
+    #adjusted_absorbance_df_mat.to_excel(writer, sheet_name='Adjusted Absorbance Material', index=False)
