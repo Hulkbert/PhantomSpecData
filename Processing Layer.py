@@ -69,6 +69,13 @@ ordered_filtered_pivot_df = filtered_pivot_df[order_columns(filtered_pivot_df)]
 
 #testDF.output_val(ordered_filtered_pivot_df,"ordered_data")
 
+
+def filter_negative_val(absorbance_df):
+    df=absorbance_df.mask(absorbance_df < 0)
+    return df
+ordered_filtered_pivot_df = filter_negative_val(ordered_filtered_pivot_df)
+
+
 def create_std_material_df(absorbance_df):
     """
     Calculates standard deviation of absorbance values for each material group.
