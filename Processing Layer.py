@@ -18,13 +18,14 @@ from datetime import datetime
 import glob
 
 from matplotlib.pyplot import scatter
+from numpy.matlib import randn
 
 import editDFTest as testDF
 from SpecDataHandler import SpecDataHandler
 import re
 
 # Load sample info
-sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_samples_02_13_25.xlsx', sheet_name=0).dropna()
+sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/absorber 02_13_25.xlsx', sheet_name=0).dropna()
 
 # Find all text files in the folder
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
@@ -40,7 +41,7 @@ scatteringDataSheet_df = pd.read_excel('Scattering_Data/Scattering_combined_data
 
 # Extract sample ID from filename pattern: ...__XX__XXXX.txt
 def parse_sample_id(filename):
-    match = re.search(r'__(\d+)__\d+\.txt$', filename)
+    match = re.search(r'__(\d+)__\d+(?:_void)?(?:\.txt)?$', filename)
     return int(match.group(1)) if match else None
 
 # Modified file processing with ID parsing
