@@ -24,18 +24,10 @@ from SpecDataHandler import SpecDataHandler
 import re
 
 # Load sample info
-sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/Mixed_Try2.xlsx', sheet_name=0).dropna()
+sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/Mixed_Try1.xlsx', sheet_name=0).dropna()
 
 # Find all text files in the folder
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
-
-# Load the Scattering info
-scatteringInfoSheet_df = pd.read_excel('Scattering_Data/Mixed_Try1.xlsx', sheet_name='Data')
-# Only drop rows where essential columns are missing
-essential_columns = ['Material_ID', 'scatter_Volume_mg']
-scatteringInfoSheet_df = scatteringInfoSheet_df.dropna(subset=essential_columns)
-#Load the Scattering Data
-scatteringDataSheet_df = pd.read_excel('Scattering_Data/Try_1_absorbance_only_combined_dataframes.xlsx',sheet_name='Absorbance Material').dropna()
 
 
 
@@ -266,11 +258,6 @@ sam = SpecDataHandler(ordered_filtered_pivot_df)  # First sample will be referen
 absorbance_df_sam = create_absorbance_df(sam)
 std = create_std_material_df(absorbance_df_sam)
 absorbance_df_mat = create_absorbance_df(mat)
-scatter_map = create_scattering_map(scatteringInfoSheet_df)
-scatter_df_avg = average_absorbance_by_scatter(scatteringDataSheet_df, scatter_map)
-absorbance_df_scattering_dict = create_scattering_map(sampleInfoSheet_df)
-adjusted_absorbance_df_mat = adjust_scattering(scatter_df_avg, absorbance_df_mat, absorbance_df_scattering_dict)
-
 
 
 print("absorbance sample")
@@ -290,32 +277,12 @@ sam.print_stats()
 print("std")
 print(std)
 
-print("scattering")
-print(scatter_map)
-
-print("scattering info sheet")
-print(scatteringInfoSheet_df)
-
-#print("scattering data sheet")
-#print(scatteringDataSheet_df)
-
-print("scatter map")
-print(scatter_map)
-
-print('averaged by scattering volume')
-print(scatter_df_avg)
-
-print("dict for input sample scattering vol")
-print(absorbance_df_scattering_dict)
-
-print("adjusted input sample scattering vol")
-print(adjusted_absorbance_df_mat)
 
 
 
 #Define the output Excel file path
 output_name = input('Input name of file: ')
-output_file_path = f'Completed_Runs/{output_name}_combined_dataframes.xlsx'
+output_file_path = f'Scattering_Data/{output_name}_absorbance_only_combined_dataframes.xlsx'
 
 # Create an Excel writer object and specify the file path
 with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
@@ -325,4 +292,3 @@ with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
     std.to_excel(writer, sheet_name='Standard Deviations', index=False)
     absorbance_df_sam.to_excel(writer, sheet_name='Absorbance Sample', index=False)
     absorbance_df_mat.to_excel(writer, sheet_name='Absorbance Material', index=False)
-    adjusted_absorbance_df_mat.to_excel(writer, sheet_name='Adjusted Absorbance Material', index=False)
