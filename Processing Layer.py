@@ -24,7 +24,7 @@ from SpecDataHandler import SpecDataHandler
 import re
 
 # Load sample info
-sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/scattering_samples_02_13_25.xlsx', sheet_name=0).dropna()
+sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/Mixed_Try1.xlsx', sheet_name=0).dropna()
 
 # Find all text files in the folder
 specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
@@ -161,7 +161,7 @@ def create_absorbance_df(MatSpecData):
     return absorbance_df
 '''
 
-def create_absorbance_df(MatSpecData, ):
+def create_absorbance_df(MatSpecData):
     absorbance_df = MatSpecData.dataset_absorbance()
     # Use the list of ordered columns to select those columns from the DataFrame
     absorbance_df = absorbance_df[order_columns(absorbance_df)]
