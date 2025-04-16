@@ -78,13 +78,14 @@ class SpecDataHandler:
 
         # Add validation for reference value
         if zero_value <= 0:
-            raise ValueError(f"Reference intensity is zero or negative at wavelength {wavelength}")
+            raise ValueError(f"Reference intensity is zero or negative or above one at wavelength {wavelength}")
         
         # Add warning for negative absorbance
-        absorbance = np.log(zero_value / sample_value)
-        if absorbance < 0:
-            print(f"Warning: Negative absorbance ({absorbance:.3f}) detected for {sample_name} at wavelength {wavelength}")
+        absorbance = np.log10(zero_value / sample_value)
+        if absorbance < 0 or absorbance > 1:
+            print(f"Warning: Negative/Higher than 0 absorbance ({absorbance:.3f}) detected for {sample_name} at wavelength {wavelength}")
             print(f"Reference intensity: {zero_value}, Sample intensity: {sample_value}")
+            print(f"Calculated Value: {absorbance}")
         
         return absorbance
 
