@@ -24,10 +24,10 @@ from SpecDataHandler import SpecDataHandler
 import re
 
 # Load sample info
-sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/Mixed_Try2.xlsx', sheet_name=0).dropna()
+sampleInfoSheet_df = pd.read_excel('sampleSpecData/sampleSheetData/Mixed_Try6.xlsx', sheet_name=0).dropna()
 
 # Find all text files in the folder
-specFiles = glob.glob('sampleSpecData/Data - Absorption/*.txt')
+specFiles = glob.glob('sampleSpecData/Mixed_Try6/*.txt')
 
 # Load the Scattering info
 scatteringInfoSheet_df = pd.read_excel('Scattering_Data/Mixed_Try1.xlsx', sheet_name='Data')
@@ -35,7 +35,7 @@ scatteringInfoSheet_df = pd.read_excel('Scattering_Data/Mixed_Try1.xlsx', sheet_
 essential_columns = ['Material_ID', 'scatter_Volume_mg']
 scatteringInfoSheet_df = scatteringInfoSheet_df.dropna(subset=essential_columns)
 #Load the Scattering Data
-scatteringDataSheet_df = pd.read_excel('Scattering_Data/Try_1_absorbance_only_combined_dataframes.xlsx',sheet_name='Absorbance Material').dropna()
+scatteringDataSheet_df = pd.read_excel('Scattering_Data/Try1_Natlog_absorbance_only_combined_dataframes.xlsx',sheet_name='Absorbance Material').dropna()
 
 
 
@@ -261,9 +261,13 @@ def adjust_scattering(scattering_df, absorbance_df,sample_scat_dict):
 
 grouped_material_pivot_df = create_averaged_material_df(ordered_filtered_pivot_df)
 #create_std_df(ordered_filtered_pivot_df)
-mat = SpecDataHandler(grouped_material_pivot_df)  # Material_1 will be reference
-sam = SpecDataHandler(ordered_filtered_pivot_df)  # First sample will be reference
+mat = SpecDataHandler(grouped_material_pivot_df)  # Material_2 will be reference
+mat.set_zero("Material_2")
+sam = SpecDataHandler(ordered_filtered_pivot_df)  # 3rd sample will be reference
+sam.set_zero("Sample_3")
+
 absorbance_df_sam = create_absorbance_df(sam)
+
 std = create_std_material_df(absorbance_df_sam)
 absorbance_df_mat = create_absorbance_df(mat)
 scatter_map = create_scattering_map(scatteringInfoSheet_df)

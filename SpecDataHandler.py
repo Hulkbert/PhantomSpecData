@@ -32,7 +32,7 @@ class SpecDataHandler:
         """
         self.pivot_df = pivot_df
         self.samples = [col for col in pivot_df.columns if col != 'Wavelength']
-        self.zero = pivot_df.columns[1]
+        self.zero = pivot_df.columns[0]
 
     def get_sample_data(self, sample_name):
         """
@@ -81,7 +81,7 @@ class SpecDataHandler:
             raise ValueError(f"Reference intensity is zero or negative or above one at wavelength {wavelength}")
         
         # Add warning for negative absorbance
-        absorbance = np.log10(zero_value / sample_value)
+        absorbance = np.log(zero_value / sample_value)
         if absorbance < 0 or absorbance > 1:
             print(f"Warning: Negative/Higher than 0 absorbance ({absorbance:.3f}) detected for {sample_name} at wavelength {wavelength}")
             print(f"Reference intensity: {zero_value}, Sample intensity: {sample_value}")
